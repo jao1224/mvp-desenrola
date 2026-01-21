@@ -83,7 +83,9 @@ def calculate_price(data: PriceCalculationRequest) -> Dict[str, Any]:
     integracoes = config.get("integracoes", {})
     for intgr, ativo in integracoes.items():
         if ativo:
-            valor = precos["integracoes"].get(intgr, 0.0)
+            default_price = precos["integracoes"].get(intgr, 0.0)
+            # Tenta pegar preço customizado, senão usa o padrão
+            valor = float(custom_prices.get(f"integracao_{intgr}", custom_prices.get(intgr, default_price)))
             setup_total += valor
             breakdown["setup"][f"Integração: {intgr}"] = valor
             
