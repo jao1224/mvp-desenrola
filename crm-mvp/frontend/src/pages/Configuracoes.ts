@@ -111,7 +111,7 @@ export async function renderConfiguracoes(container: HTMLElement) {
                     </div>
 
                     <div style="display: flex; justify-content: flex-end;">
-                        <button type="submit" class="btn btn-primary" style="background-color: var(--color-success); border-color: var(--color-success);">Salvar Preços</button>
+                        <button type="button" id="btn-save-prices" class="btn btn-primary" style="background-color: var(--color-success); border-color: var(--color-success);">Salvar Preços</button>
                     </div>
                 </form>
                 
@@ -139,19 +139,19 @@ export async function renderConfiguracoes(container: HTMLElement) {
         if (pricingSetting && pricingSetting.value) {
             const config = JSON.parse(pricingSetting.value);
 
-            (document.getElementById('setup_base') as HTMLInputElement).value = config.setup_base || 2499.00;
-            (document.getElementById('mensal_servidor') as HTMLInputElement).value = config.mensal_servidor || 119.99;
-            (document.getElementById('mensal_suporte') as HTMLInputElement).value = config.mensal_suporte || 899.99;
+            (document.getElementById('setup_base') as HTMLInputElement).value = config.setup_base ?? 2499.00;
+            (document.getElementById('mensal_servidor') as HTMLInputElement).value = config.mensal_servidor ?? 119.99;
+            (document.getElementById('mensal_suporte') as HTMLInputElement).value = config.mensal_suporte ?? 899.99;
 
-            (document.getElementById('modulo_crm') as HTMLInputElement).value = config.modulos?.crm || 1500.00;
-            (document.getElementById('modulo_erp') as HTMLInputElement).value = config.modulos?.erp || 2000.00;
-            (document.getElementById('modulo_ai_wa') as HTMLInputElement).value = config.modulos?.ai || 2500.00;
+            (document.getElementById('modulo_crm') as HTMLInputElement).value = config.modulos?.crm ?? 1500.00;
+            (document.getElementById('modulo_erp') as HTMLInputElement).value = config.modulos?.erp ?? 2000.00;
+            (document.getElementById('modulo_ai_wa') as HTMLInputElement).value = config.modulos?.ai ?? 2500.00;
 
-            (document.getElementById('cust_interpreta_texto') as HTMLInputElement).value = config.customizacoes?.interpreta_texto || 199.99;
-            (document.getElementById('cust_interpreta_audio') as HTMLInputElement).value = config.customizacoes?.interpreta_audio || 299.99;
-            (document.getElementById('cust_responde_texto') as HTMLInputElement).value = config.customizacoes?.responde_texto || 199.99;
-            (document.getElementById('cust_responde_audio') as HTMLInputElement).value = config.customizacoes?.responde_audio || 499.99;
-            (document.getElementById('cust_envio_email') as HTMLInputElement).value = config.customizacoes?.envio_email || 199.99;
+            (document.getElementById('cust_interpreta_texto') as HTMLInputElement).value = config.customizacoes?.interpreta_texto ?? 199.99;
+            (document.getElementById('cust_interpreta_audio') as HTMLInputElement).value = config.customizacoes?.interpreta_audio ?? 299.99;
+            (document.getElementById('cust_responde_texto') as HTMLInputElement).value = config.customizacoes?.responde_texto ?? 199.99;
+            (document.getElementById('cust_responde_audio') as HTMLInputElement).value = config.customizacoes?.responde_audio ?? 499.99;
+            (document.getElementById('cust_envio_email') as HTMLInputElement).value = config.customizacoes?.envio_email ?? 199.99;
         } else {
             // Defaults if no config yet
             setDefaultPricing();
@@ -201,17 +201,18 @@ export async function renderConfiguracoes(container: HTMLElement) {
         }
     });
 
-    // Handle Pricing Save
-    document.getElementById('pricing-form')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    // Handle Pricing Save (Explicit Button Click)
+    document.getElementById('btn-save-prices')?.addEventListener('click', async () => {
         try {
+            const btn = document.getElementById('btn-save-prices') as HTMLButtonElement;
+            const originalText = btn.textContent;
+            btn.textContent = "Salvando...";
+            btn.disabled = true;
+
             // Helper to safe parse float
             const safeFloat = (id: string, def: number) => {
                 const el = document.getElementById(id) as HTMLInputElement;
-                if (!el) {
-                    console.warn(`Element ${id} not found, using default ${def}`);
-                    return def;
-                }
+                if (!el) return def;
                 const val = el.value.replace(',', '.');
                 const num = parseFloat(val);
                 return isNaN(num) ? def : num;
@@ -235,17 +236,25 @@ export async function renderConfiguracoes(container: HTMLElement) {
                 }
             };
 
-            console.log("💾 SAVING ROBUST CONFIG:", config);
-
             await settings.update('pricing_config', {
                 value: JSON.stringify(config),
-                description: 'Configuração Global de Preços do Orçamento'
+                description: 'Global Pricing Config'
             });
 
             showToast('Preços atualizados com sucesso!', 'success');
+
+            // Visual feedback
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }, 1000);
+
         } catch (error: any) {
             console.error("Save error:", error);
             showToast(error.message || 'Erro ao salvar preços', 'error');
+            const btn = document.getElementById('btn-save-prices') as HTMLButtonElement;
+            btn.textContent = "Salvar Preços";
+            btn.disabled = false;
         }
     });
 

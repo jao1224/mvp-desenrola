@@ -276,19 +276,19 @@ export async function renderOrcamentos(container: HTMLElement) {
                             <h4 style="font-size: 0.9rem; margin-bottom: 1rem;">Customizações do Agente (Opcional)</h4>
                             <div class="variable-grid">
                                 <label class="checkbox-group">
-                                    <input type="checkbox" name="cust_text_in" class="calc-trigger"> Agente interpreta texto <span style="opacity:0.5">(${formatCurrency(globalPricing.customizacoes?.interpreta_texto || 199.99)})</span>
+                                    <input type="checkbox" name="cust_text_in" class="calc-trigger"> Agente interpreta texto
                                 </label>
                                 <label class="checkbox-group">
-                                    <input type="checkbox" name="cust_audio_in" class="calc-trigger"> Agente interpreta áudio <span style="opacity:0.5">(${formatCurrency(globalPricing.customizacoes?.interpreta_audio || 299.99)})</span>
+                                    <input type="checkbox" name="cust_audio_in" class="calc-trigger"> Agente interpreta áudio
                                 </label>
                                 <label class="checkbox-group">
-                                    <input type="checkbox" name="cust_text_out" class="calc-trigger"> Agente responde em texto <span style="opacity:0.5">(${formatCurrency(globalPricing.customizacoes?.responde_texto || 199.99)})</span>
+                                    <input type="checkbox" name="cust_text_out" class="calc-trigger"> Agente responde em texto
                                 </label>
                                 <label class="checkbox-group">
-                                    <input type="checkbox" name="cust_audio_out" class="calc-trigger"> Agente responde em áudio <span style="opacity:0.5">(${formatCurrency(globalPricing.customizacoes?.responde_audio || 499.99)})</span>
+                                    <input type="checkbox" name="cust_audio_out" class="calc-trigger"> Agente responde em áudio
                                 </label>
                                 <label class="checkbox-group">
-                                    <input type="checkbox" name="cust_email" class="calc-trigger"> Envio de e-mail <span style="opacity:0.5">(${formatCurrency(globalPricing.customizacoes?.envio_email || 199.99)})</span>
+                                    <input type="checkbox" name="cust_email" class="calc-trigger"> Envio de e-mail
                                 </label>
                             </div>
                         </div>
