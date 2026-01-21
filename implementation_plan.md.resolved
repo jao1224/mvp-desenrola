@@ -1,0 +1,352 @@
+# CRM MVP - Plano de Implementação
+
+Sistema de gerenciamento interno para empresa de TI focada em automações e engenharia de soluções.
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Stack Tecnológico Proposto:**
+> - **Frontend/Backend:** Next.js 14 (App Router) com TypeScript
+> - **Banco de Dados:** SQLite com Prisma ORM (leve, sem necessidade de servidor externo)
+> - **Estilização:** CSS moderno com variáveis e design responsivo
+> - **Autenticação:** NextAuth.js com credenciais
+>
+> Esta stack foi escolhida para um MVP rápido e escalável. Aprovar para prosseguir?
+
+---
+
+## Proposed Changes
+
+### Estrutura do Projeto
+
+```
+crm-mvp/
+├── prisma/
+│   └── schema.prisma          # Schema do banco de dados
+├── src/
+│   ├── app/
+│   │   ├── (auth)/            # Rotas de autenticação
+│   │   ├── (dashboard)/       # Layout principal
+│   │   │   ├── dashboard/     # Página inicial
+│   │   │   ├── clientes/      # Gestão de clientes
+│   │   │   ├── projetos/      # Gestão de projetos
+│   │   │   ├── contratos/     # Pedidos e contratos
+│   │   │   ├── financeiro/    # Gestão financeira
+│   │   │   └── configuracoes/ # Configurações e usuários
+│   │   ├── api/               # API Routes
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components/            # Componentes reutilizáveis
+│   ├── lib/                   # Utilitários e configurações
+│   └── styles/                # Estilos globais
+├── uploads/                   # Documentos uploadados
+└── package.json
+```
+
+---
+
+### 1. Setup e Infraestrutura
+
+#### [NEW] [package.json](file:///c:/Users/João Fernando/Desktop/Nova pasta/crm-mvp/package.json)
+- Inicializar Next.js 14 com TypeScript
+- Dependências: `prisma`, `@prisma/client`, `next-auth`, `bcryptjs`, `zod`
+
+#### [NEW] [schema.prisma](file:///c:/Users/João Fernando/Desktop/Nova pasta/crm-mvp/prisma/schema.prisma)
+Modelagem do banco de dados:
+
+```prisma
+// Usuários e Autenticação
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  name        String
+  role        Role     @default(COLABORADOR)
+  createdAt   DateTime @default(now())
+  logs        ActivityLog[]
+  projetos    Project[] @relation("ProjectMembers")
+}
+
+enum Role {
+  ADMIN
+  GESTOR
+  COLABORADOR
+}
+
+// Clientes
+model Client {
+  id            String   @id @default(cuid())
+  nome          String
+  documento     String   // CNPJ ou CPF
+  email         String?
+  telefone      String?
+  setor         String?
+  status        ClientStatus @default(POTENCIAL)
+  createdAt     DateTime @default(now())
+  interacoes    Interaction[]
+  projetos      Project[]
+  contratos     Contract[]
+  pagamentos    Payment[]
+}
+
+enum ClientStatus {
+  ATIVO
+  POTENCIAL
+  EM_NEGOCIACAO
+  INATIVO
+}
+
+// Projetos
+model Project {
+  id            String   @id @default(cuid())
+  nome          String
+  descricao     String?
+  status        ProjectStatus @default(PLANEJAMENTO)
+  clienteId     String
+  cliente       Client   @relation(fields: [clienteId], references: [id])
+  responsavelId String?
+  membros       User[]   @relation("ProjectMembers")
+  entregaveis   Deliverable[]
+  contratoId    String?
+  contrato      Contract? @relation(fields: [contratoId], references: [id])
+  createdAt     DateTime @default(now())
+  prazoFinal    DateTime?
+}
+
+enum ProjectStatus {
+  PLANEJAMENTO
+  EM_EXECUCAO
+  PAUSADO
+  CONCLUIDO
+  CANCELADO
+}
+
+// Entregáveis
+model Deliverable {
+  id          String   @id @default(cuid())
+  nome        String
+  descricao   String?
+  prazo       DateTime?
+  concluido   Boolean  @default(false)
+  projetoId   String
+  projeto     Project  @relation(fields: [projetoId], references: [id])
+}
+
+// Contratos
+model Contract {
+  id            String   @id @default(cuid())
+  numero        String   @unique
+  clienteId     String
+  cliente       Client   @relation(fields: [clienteId], references: [id])
+  dataInicio    DateTime
+  dataTermino   DateTime
+  valor         Float
+  condicoes     String?
+  documentos    Document[]
+  projetos      Project[]
+  createdAt     DateTime @default(now())
+}
+
+// Documentos
+model Document {
+  id          String   @id @default(cuid())
+  nome        String
+  caminho     String
+  contratoId  String
+  contrato    Contract @relation(fields: [contratoId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+// Interações com Clientes
+model Interaction {
+  id          String   @id @default(cuid())
+  tipo        String   // email, reunião, ligação, etc.
+  descricao   String
+  clienteId   String
+  cliente     Client   @relation(fields: [clienteId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+// Pagamentos/Recebimentos
+model Payment {
+  id          String   @id @default(cuid())
+  tipo        PaymentType
+  valor       Float
+  dataVencto  DateTime
+  dataPago    DateTime?
+  status      PaymentStatus @default(PENDENTE)
+  descricao   String?
+  clienteId   String?
+  cliente     Client?  @relation(fields: [clienteId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+enum PaymentType {
+  RECEBIMENTO
+  PAGAMENTO
+}
+
+enum PaymentStatus {
+  PENDENTE
+  PAGO
+  ATRASADO
+  CANCELADO
+}
+
+// Log de Atividades
+model ActivityLog {
+  id          String   @id @default(cuid())
+  action      String
+  details     String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+}
+```
+
+---
+
+### 2. Autenticação e Controle de Acesso
+
+#### [NEW] [auth.ts](file:///c:/Users/João Fernando/Desktop/Nova pasta/crm-mvp/src/lib/auth.ts)
+- Configuração NextAuth.js com CredentialsProvider
+- Hash de senhas com bcryptjs
+- Sessões JWT
+
+#### [NEW] [middleware.ts](file:///c:/Users/João Fernando/Desktop/Nova pasta/crm-mvp/src/middleware.ts)
+- Proteção de rotas
+- Verificação de permissões por role
+
+---
+
+### 3. Módulo de Clientes
+
+#### [NEW] [clientes/page.tsx](file:///c:/Users/João Fernando/Desktop/Nova pasta/crm-mvp/src/app/(dashboard)/clientes/page.tsx)
+- Listagem com filtros (status, setor)
+- Cards ou tabela responsiva
+
+#### [NEW] [clientes/[id]/page.tsx](file:///c:/Users/João Fernando/Desktop/Nova pasta/crm-mvp/src/app/(dashboard)/clientes/[id]/page.tsx)
+- Detalhes do cliente
+- Histórico de interações
+- Projetos e contratos vinculados
+
+#### [NEW] [api/clientes/route.ts](file:///c:/Users/João Fernando/Desktop/Nova pasta/crm-mvp/src/app/api/clientes/route.ts)
+- CRUD completo de clientes
+- Validação com Zod
+
+---
+
+### 4. Módulo de Projetos
+
+#### [NEW] [projetos/page.tsx](file:///c:/Users/João Fernando/Desktop/Nova pasta/crm-mvp/src/app/(dashboard)/projetos/page.tsx)
+- Visualização em cards/kanban por status
+- Filtros por cliente e responsável
+
+#### [NEW] [projetos/[id]/page.tsx](file:///c:/Users/João Fernando/Desktop/Nova pasta/crm-mvp/src/app/(dashboard)/projetos/[id]/page.tsx)
+- Detalhes do projeto
+- Lista de entregáveis com checkboxes
+- Timeline de atividades
+
+---
+
+### 5. Módulo de Contratos
+
+#### [NEW] [contratos/page.tsx](file:///c:/Users/João Fernando/Desktop/Nova pasta/crm-mvp/src/app/(dashboard)/contratos/page.tsx)
+- Lista de contratos com alertas visuais para vencimentos
+- Upload de documentos
+
+---
+
+### 6. Módulo Financeiro
+
+#### [NEW] [financeiro/page.tsx](file:///c:/Users/João Fernando/Desktop/Nova pasta/crm-mvp/src/app/(dashboard)/financeiro/page.tsx)
+- Registro de pagamentos e recebimentos
+- Gráficos simples de fluxo de caixa
+- Filtros por período, cliente, projeto
+
+---
+
+### 7. Dashboard Principal
+
+#### [NEW] [dashboard/page.tsx](file:///c:/Users/João Fernando/Desktop/Nova pasta/crm-mvp/src/app/(dashboard)/dashboard/page.tsx)
+KPIs e indicadores:
+- Total de clientes ativos
+- Projetos em andamento
+- Contratos próximos do vencimento (30 dias)
+- Receitas pendentes vs recebidas
+- Atividades recentes
+
+---
+
+### 8. Interface e Design
+
+#### [NEW] [globals.css](file:///c:/Users/João Fernando/Desktop/Nova pasta/crm-mvp/src/styles/globals.css)
+Design system moderno com:
+- Tema escuro elegante
+- Variáveis CSS para cores e espaçamentos
+- Componentes responsivos
+- Micro-animações
+
+---
+
+## Verification Plan
+
+### Teste Funcional via Browser
+
+Após a implementação, executaremos testes no navegador para validar:
+
+1. **Autenticação**
+   - Login com credenciais válidas e inválidas
+   - Verificação de permissões por role
+
+2. **CRUD de Clientes**
+   - Criar, editar, listar e excluir clientes
+   - Validação de campos obrigatórios
+
+3. **CRUD de Projetos**
+   - Vincular projetos a clientes
+   - Alterar status do projeto
+   - Adicionar entregáveis
+
+4. **Contratos**
+   - Criar contrato vinculado a cliente
+   - Upload de documentos
+   - Verificar alertas de vencimento
+
+5. **Financeiro**
+   - Registrar pagamentos e recebimentos
+   - Verificar cálculos do fluxo de caixa
+
+6. **Dashboard**
+   - Conferir se os indicadores refletem os dados cadastrados
+
+### Comandos para Execução
+
+```bash
+# 1. Iniciar o servidor de desenvolvimento
+cd crm-mvp
+npm run dev
+
+# 2. Acessar no navegador
+# http://localhost:3000
+```
+
+### Teste Manual Proposto
+
+O usuário deverá:
+1. Fazer login como admin
+2. Cadastrar um cliente de teste
+3. Criar um projeto vinculado ao cliente
+4. Criar um contrato com data de vencimento próxima
+5. Registrar um recebimento
+6. Verificar se o dashboard mostra todos os dados corretamente
+
+---
+
+## Próximos Passos (Pós-MVP)
+
+- Integração com envio de e-mails (follow-up automático)
+- API para integração com IA
+- Relatórios avançados com exportação PDF/Excel
+- Notificações push/e-mail para vencimentos
+- Dashboard com gráficos mais elaborados
