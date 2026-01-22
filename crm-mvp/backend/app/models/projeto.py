@@ -23,7 +23,7 @@ class Projeto(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     nome = Column(String(200), nullable=False, index=True)
     descricao = Column(Text)
-    status = Column(Enum(ProjectStatus), default=ProjectStatus.PLANEJAMENTO)
+    status = Column(String, default="planejamento")
     cliente_id = Column(String, ForeignKey("clientes.id"), nullable=False, index=True)
     responsavel_id = Column(String, ForeignKey("users.id"), nullable=True)
     contrato_id = Column(String, ForeignKey("contratos.id"), nullable=True)

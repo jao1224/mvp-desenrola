@@ -35,7 +35,7 @@ class EntregavelResponse(EntregavelBase):
 class ProjetoBase(BaseModel):
     nome: str
     descricao: Optional[str] = None
-    status: ProjectStatus = ProjectStatus.PLANEJAMENTO
+    status: str = "planejamento"
     cliente_id: str
     responsavel_id: Optional[str] = None
     contrato_id: Optional[str] = None
@@ -50,7 +50,7 @@ class ProjetoCreate(ProjetoBase):
 class ProjetoUpdate(BaseModel):
     nome: Optional[str] = None
     descricao: Optional[str] = None
-    status: Optional[ProjectStatus] = None
+    status: Optional[str] = None
     responsavel_id: Optional[str] = None
     contrato_id: Optional[str] = None
     prazo_inicio: Optional[datetime] = None

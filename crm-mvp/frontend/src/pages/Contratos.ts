@@ -1,55 +1,96 @@
-import { contratos, clientes as clientesApi } from '../api/client';
+import { contratos, clientes as clientesApi, orcamentos as orcamentosApi } from '../api/client';
 import { formatDate, formatCurrency, showToast } from '../utils/helpers';
-import type { Contrato, Cliente } from '../api/types';
+import type { Contrato, Cliente, Orcamento } from '../api/types';
 
 let contratosList: Contrato[] = [];
 let clientesList: Cliente[] = [];
+let orcamentosList: Orcamento[] = [];
 
 export async function renderContratos(container: HTMLElement) {
-    container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
 
-    try {
-        [contratosList, clientesList] = await Promise.all([
-            contratos.list(),
-            clientesApi.list()
-        ]);
-        renderContratosList(container);
-    } catch (error) {
-        container.innerHTML = '<div class="empty-state">Erro ao carregar contratos</div>';
-    }
+  try {
+    [contratosList, clientesList, orcamentosList] = await Promise.all([
+      contratos.list(),
+      clientesApi.list(),
+      orcamentosApi.list() // Removed filter to show all budgets
+    ]);
+    if (!orcamentosList) orcamentosList = [];
+
+    renderContratosTabs(container);
+  } catch (error) {
+    console.error("Erro ao carregar dados:", error);
+    container.innerHTML = '<div class="empty-state">Erro ao carregar dados. Tente novamente.</div>';
+  }
 }
 
-function renderContratosList(container: HTMLElement) {
-    container.innerHTML = `
+function renderContratosTabs(container: HTMLElement) {
+  container.innerHTML = `
     <div class="page-header">
       <h1 class="page-title">Contratos</h1>
-      <button class="btn btn-primary" id="add-contrato-btn">+ Novo Contrato</button>
     </div>
 
-    <div class="card">
-      ${contratosList.length === 0 ?
-            '<div class="empty-state"><div class="empty-state-icon">📋</div>Nenhum contrato cadastrado</div>' :
-            `<div class="table-container">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Número</th>
-                <th>Cliente</th>
-                <th>Valor</th>
-                <th>Início</th>
-                <th>Término</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${contratosList.map(renderContratoRow).join('')}
-            </tbody>
-          </table>
-        </div>`
-        }
+    <!-- TABS NAVIGATION -->
+    <div class="tabs" style="margin-bottom: 20px; border-bottom: 1px solid #ddd;">
+        <button class="tab-btn active" data-tab="lista" style="padding: 10px 20px; margin-right: 5px; border: none; background: none; border-bottom: 2px solid var(--primary-color); font-weight: bold; cursor: pointer;">Lista de Contratos</button>
+        <button class="tab-btn" data-tab="gerador" style="padding: 10px 20px; border: none; background: none; border-bottom: 2px solid transparent; color: #666; cursor: pointer;">Gerador de Contratos</button>
     </div>
 
-    <!-- Modal -->
+    <!-- TABS CONTENT -->
+    <div id="tab-content-lista" class="tab-content">
+        <!-- Conteúdo Lista (Original) -->
+        <div class="card">
+            <div class="card-header" style="padding: 1rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0;">Contratos Vigentes</h3>
+                <button class="btn btn-primary" id="add-contrato-btn">+ Novo Contrato Manual</button>
+            </div>
+            ${renderTabelaContratos()}
+        </div>
+    </div>
+
+    <div id="tab-content-gerador" class="tab-content" style="display: none;">
+        <!-- Conteúdo Gerador (Novo) -->
+        <div class="card" style="padding: 2rem;">
+            <h2 style="margin-top: 0;">Gerador de Contratos</h2>
+            <p style="color: #666; margin-bottom: 2rem;">Selecione um cliente ou parceiro e um orçamento para gerar o contrato.</p>
+
+            <form id="gerador-contrato-form">
+                <div style="display: flex; gap: 2rem; margin-bottom: 2rem; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="radio" id="tipo_cliente" name="tipo_entidade" value="cliente" checked>
+                        <label for="tipo_cliente" style="cursor: pointer; font-weight: 500;">Cliente</label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="radio" id="tipo_parceiro" name="tipo_entidade" value="parceiro">
+                        <label for="tipo_parceiro" style="cursor: pointer; font-weight: 500;">Parceiro</label>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+                    <div style="flex: 1;">
+                        <select class="form-input form-select" id="gerador_entidade_id" required style="width: 100%; padding: 0.75rem;">
+                            <option value="">Selecione o Cliente...</option>
+                            ${clientesList.map(c => `<option value="${c.id}">${c.nome}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <select class="form-input form-select" id="gerador_orcamento_id" required style="width: 100%; padding: 0.75rem;">
+                            <option value="">Selecione um orçamento...</option>
+                            ${orcamentosList.map(o => `<option value="${o.id}">${o.titulo} [${o.status.toUpperCase()}] (${formatCurrency(o.valor_total)})</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="button" id="btn-gerar-preview" class="btn btn-primary" style="padding: 0.75rem 2rem;">
+                        Gerar Minuta de Contrato
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Manual (Mantido) -->
     <div class="modal-overlay" id="contrato-modal">
       <div class="modal">
         <div class="modal-header">
@@ -98,22 +139,48 @@ function renderContratosList(container: HTMLElement) {
         </form>
       </div>
     </div>
-  `;
+    `;
 
-    setupEventListeners(container);
+  setupTabLogic();
+  setupEventListeners(container);
+}
+
+function renderTabelaContratos(): string {
+  if (contratosList.length === 0) {
+    return '<div class="empty-state"><div class="empty-state-icon">📋</div>Nenhum contrato cadastrado</div>';
+  }
+
+  return `
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Número</th>
+            <th>Cliente</th>
+            <th>Valor</th>
+            <th>Início</th>
+            <th>Término</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${contratosList.map(renderContratoRow).join('')}
+        </tbody>
+      </table>
+    </div>`;
 }
 
 function renderContratoRow(contrato: Contrato): string {
-    const cliente = clientesList.find(c => c.id === contrato.cliente_id);
-    const hoje = new Date();
-    const termino = new Date(contrato.data_termino);
-    const diasRestantes = Math.ceil((termino.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+  const cliente = clientesList.find(c => c.id === contrato.cliente_id);
+  const hoje = new Date();
+  const termino = new Date(contrato.data_termino);
+  const diasRestantes = Math.ceil((termino.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
 
-    let badgeClass = 'badge-success';
-    if (diasRestantes <= 0) badgeClass = 'badge-danger';
-    else if (diasRestantes <= 30) badgeClass = 'badge-warning';
+  let badgeClass = 'badge-success';
+  if (diasRestantes <= 0) badgeClass = 'badge-danger';
+  else if (diasRestantes <= 30) badgeClass = 'badge-warning';
 
-    return `
+  return `
     <tr>
       <td><strong>${contrato.numero}</strong></td>
       <td>${cliente?.nome || '-'}</td>
@@ -133,78 +200,132 @@ function renderContratoRow(contrato: Contrato): string {
   `;
 }
 
+function setupTabLogic() {
+  const tabs = document.querySelectorAll('.tab-btn');
+  const contents = document.querySelectorAll('.tab-content');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = (tab as HTMLElement).dataset.tab;
+
+      // Toggle Active Tab
+      tabs.forEach(t => {
+        (t as HTMLElement).style.borderBottom = '2px solid transparent';
+        (t as HTMLElement).style.color = '#666';
+        t.classList.remove('active');
+      });
+      (tab as HTMLElement).style.borderBottom = '2px solid var(--primary-color)';
+      (tab as HTMLElement).style.color = 'inherit';
+      tab.classList.add('active');
+
+      // Toggle Content
+      contents.forEach(c => {
+        (c as HTMLElement).style.display = 'none';
+      });
+      document.getElementById(`tab-content-${target}`)!.style.display = 'block';
+    });
+  });
+}
+
 function setupEventListeners(container: HTMLElement) {
-    const modal = document.getElementById('contrato-modal') as HTMLElement;
-    const form = document.getElementById('contrato-form') as HTMLFormElement;
+  const modal = document.getElementById('contrato-modal') as HTMLElement;
+  const form = document.getElementById('contrato-form') as HTMLFormElement;
 
-    document.getElementById('add-contrato-btn')?.addEventListener('click', () => {
-        form.reset();
-        (document.getElementById('contrato-id') as HTMLInputElement).value = '';
-        (document.getElementById('modal-title') as HTMLElement).textContent = 'Novo Contrato';
+  // Manual Contract Add
+  document.getElementById('add-contrato-btn')?.addEventListener('click', () => {
+    form.reset();
+    (document.getElementById('contrato-id') as HTMLInputElement).value = '';
+    (document.getElementById('modal-title') as HTMLElement).textContent = 'Novo Contrato';
+    modal.classList.add('active');
+  });
+
+  // Close Modal Logic
+  const closeModal = () => modal.classList.remove('active');
+  document.getElementById('close-modal')?.addEventListener('click', closeModal);
+  document.getElementById('cancel-btn')?.addEventListener('click', closeModal);
+
+  // Edit Logic
+  document.querySelectorAll('.edit-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = (btn as HTMLElement).dataset.id!;
+      const contrato = contratosList.find(c => c.id === id);
+      if (contrato) {
+        (document.getElementById('contrato-id') as HTMLInputElement).value = contrato.id;
+        (document.getElementById('numero') as HTMLInputElement).value = contrato.numero;
+        (document.getElementById('cliente_id') as HTMLSelectElement).value = contrato.cliente_id;
+        (document.getElementById('valor') as HTMLInputElement).value = contrato.valor.toString();
+        (document.getElementById('data_inicio') as HTMLInputElement).value = contrato.data_inicio.split('T')[0];
+        (document.getElementById('data_termino') as HTMLInputElement).value = contrato.data_termino.split('T')[0];
+        (document.getElementById('condicoes') as HTMLTextAreaElement).value = contrato.condicoes || '';
+        (document.getElementById('modal-title') as HTMLElement).textContent = 'Editar Contrato';
         modal.classList.add('active');
+      }
     });
+  });
 
-    document.getElementById('close-modal')?.addEventListener('click', () => modal.classList.remove('active'));
-    document.getElementById('cancel-btn')?.addEventListener('click', () => modal.classList.remove('active'));
-
-    document.querySelectorAll('.edit-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const id = (btn as HTMLElement).dataset.id!;
-            const contrato = contratosList.find(c => c.id === id);
-            if (contrato) {
-                (document.getElementById('contrato-id') as HTMLInputElement).value = contrato.id;
-                (document.getElementById('numero') as HTMLInputElement).value = contrato.numero;
-                (document.getElementById('cliente_id') as HTMLSelectElement).value = contrato.cliente_id;
-                (document.getElementById('valor') as HTMLInputElement).value = contrato.valor.toString();
-                (document.getElementById('data_inicio') as HTMLInputElement).value = contrato.data_inicio.split('T')[0];
-                (document.getElementById('data_termino') as HTMLInputElement).value = contrato.data_termino.split('T')[0];
-                (document.getElementById('condicoes') as HTMLTextAreaElement).value = contrato.condicoes || '';
-                (document.getElementById('modal-title') as HTMLElement).textContent = 'Editar Contrato';
-                modal.classList.add('active');
-            }
-        });
-    });
-
-    document.querySelectorAll('.delete-btn').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-            const id = (btn as HTMLElement).dataset.id!;
-            if (confirm('Tem certeza?')) {
-                try {
-                    await contratos.delete(id);
-                    showToast('Contrato excluído', 'success');
-                    renderContratos(container);
-                } catch (error: any) {
-                    showToast(error.message, 'error');
-                }
-            }
-        });
-    });
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = (document.getElementById('contrato-id') as HTMLInputElement).value;
-
-        const data = {
-            numero: (document.getElementById('numero') as HTMLInputElement).value,
-            cliente_id: (document.getElementById('cliente_id') as HTMLSelectElement).value,
-            valor: parseFloat((document.getElementById('valor') as HTMLInputElement).value),
-            data_inicio: (document.getElementById('data_inicio') as HTMLInputElement).value,
-            data_termino: (document.getElementById('data_termino') as HTMLInputElement).value,
-            condicoes: (document.getElementById('condicoes') as HTMLTextAreaElement).value || undefined,
-        };
-
+  // Delete Logic
+  document.querySelectorAll('.delete-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = (btn as HTMLElement).dataset.id!;
+      if (confirm('Tem certeza?')) {
         try {
-            if (id) {
-                await contratos.update(id, data);
-                showToast('Contrato atualizado', 'success');
-            } else {
-                await contratos.create(data);
-                showToast('Contrato criado', 'success');
-            }
-            modal.classList.remove('active');
-            renderContratos(container);
+          await contratos.delete(id);
+          showToast('Contrato excluído', 'success');
+          renderContratos(container);
         } catch (error: any) {
-            showToast(error.message, 'error');
+          showToast(error.message, 'error');
         }
+      }
     });
+  });
+
+  // Form Submit (Manual)
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = (document.getElementById('contrato-id') as HTMLInputElement).value;
+
+    const data = {
+      numero: (document.getElementById('numero') as HTMLInputElement).value,
+      cliente_id: (document.getElementById('cliente_id') as HTMLSelectElement).value,
+      valor: parseFloat((document.getElementById('valor') as HTMLInputElement).value),
+      data_inicio: (document.getElementById('data_inicio') as HTMLInputElement).value,
+      data_termino: (document.getElementById('data_termino') as HTMLInputElement).value,
+      condicoes: (document.getElementById('condicoes') as HTMLTextAreaElement).value || undefined,
+    };
+
+    try {
+      if (id) {
+        await contratos.update(id, data);
+        showToast('Contrato atualizado', 'success');
+      } else {
+        await contratos.create(data);
+        showToast('Contrato criado', 'success');
+      }
+      modal.classList.remove('active');
+      renderContratos(container);
+    } catch (error: any) {
+      showToast(error.message, 'error');
+    }
+  });
+
+  // Generator UI Logic (Dynamic Placeholders)
+  const entityTypeRadios = document.querySelectorAll('input[name="tipo_entidade"]');
+  const entitySelect = document.getElementById('gerador_entidade_id') as HTMLSelectElement;
+
+  entityTypeRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      const type = (e.target as HTMLInputElement).value;
+      if (type === 'cliente') {
+        entitySelect.innerHTML = '<option value="">Selecione o Cliente...</option>' +
+          clientesList.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+      } else {
+        // Placeholder for Partners since we don't have an API for them yet
+        entitySelect.innerHTML = '<option value="">Selecione o Parceiro...</option><option value="p1">Parceiro Exemplo Ltda</option>';
+      }
+    });
+  });
+
+  document.getElementById('btn-gerar-preview')?.addEventListener('click', () => {
+    showToast('Funcionalidade de geração em desenvolvimento', 'info');
+  });
 }
