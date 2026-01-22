@@ -1,5 +1,6 @@
 import { projetos, clientes as clientesApi } from '../api/client';
 import { formatDate, getStatusBadgeClass, getStatusLabel, showToast } from '../utils/helpers';
+import { getIcon } from '../utils/icons';
 import type { Projeto, Cliente } from '../api/types';
 
 let projetosList: Projeto[] = [];
@@ -181,7 +182,7 @@ function renderSplitLayout(container: HTMLElement) {
         <div class="list-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <div>
-                     <h2 class="form-title" style="margin:0;">📁 Lista de Projetos</h2>
+                     <h2 class="form-title" style="margin:0; display:flex; align-items:center; gap:8px;">${getIcon('folder')} Lista de Projetos</h2>
                      <p class="form-subtitle" style="margin:0;">Gerencie seus projetos e acompanhe prazos.</p>
                 </div>
             </div>
@@ -202,7 +203,7 @@ function renderClientOptions() {
 
 function renderProjectsTable() {
   if (projetosList.length === 0) {
-    return '<div class="empty-state"><div class="empty-state-icon">📁</div>Nenhum projeto cadastrado ainda.</div>';
+    return `<div class="empty-state"><div class="empty-state-icon">${getIcon('folder-open', 'w-12 h-12')}</div>Nenhum projeto cadastrado ainda.</div>`;
   }
 
   return `
@@ -228,8 +229,8 @@ function renderProjectsTable() {
                         <td><span class="badge ${getStatusBadgeClass(p.status)}">${getStatusLabel(p.status)}</span></td>
                         <td>
                             <div style="display: flex; gap: 0.5rem;">
-                                <button class="btn btn-secondary btn-sm edit-btn" data-id="${p.id}" title="Editar">✏️</button>
-                                <button class="btn btn-danger btn-sm delete-btn" data-id="${p.id}" title="Excluir">🗑️</button>
+                                <button class="btn btn-secondary btn-sm edit-btn" data-id="${p.id}" title="Editar">${getIcon('edit', 'w-4 h-4')}</button>
+                                <button class="btn btn-danger btn-sm delete-btn" data-id="${p.id}" title="Excluir">${getIcon('trash', 'w-4 h-4')}</button>
                             </div>
                         </td>
                     </tr>
@@ -345,7 +346,7 @@ function setupEventListeners(container: HTMLElement) {
       status: (document.getElementById('status') as HTMLSelectElement).value as any,
     };
 
-    const originalText = saveBtn.textContent;
+
     saveBtn.disabled = true;
     saveBtn.textContent = 'Salvando...';
 

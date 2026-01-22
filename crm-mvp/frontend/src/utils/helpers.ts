@@ -64,7 +64,7 @@ export function getStatusLabel(status: string): string {
 // Toast notifications
 let toastContainer: HTMLElement | null = null;
 
-export function showToast(message: string, type: 'success' | 'error' | 'warning' = 'success') {
+export function showToast(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'success') {
     if (!toastContainer) {
         toastContainer = document.createElement('div');
         toastContainer.className = 'toast-container';

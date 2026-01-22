@@ -1,5 +1,6 @@
 import { financeiro, clientes as clientesApi } from '../api/client';
 import { formatDate, formatCurrency, getStatusBadgeClass, getStatusLabel, showToast } from '../utils/helpers';
+import { getIcon } from '../utils/icons';
 import type { Pagamento, Cliente, FluxoCaixaResponse } from '../api/types';
 
 let pagamentosList: Pagamento[] = [];
@@ -116,6 +117,10 @@ function renderSplitLayout(container: HTMLElement) {
             transition: all 0.2s;
             color: var(--color-text-secondary);
             border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
         .type-option:hover { background: var(--color-bg-tertiary); }
         
@@ -222,7 +227,6 @@ function renderSplitLayout(container: HTMLElement) {
         .chart-label { font-size: 0.85rem; font-weight: 500; color: var(--color-text-secondary); margin-top: 8px; }
 
     </style>
-
     <div class="page-header">
       <h1 class="page-title">Gestão Financeira</h1>
     </div>
@@ -241,11 +245,11 @@ function renderSplitLayout(container: HTMLElement) {
                     <div class="type-toggle">
                         <label>
                             <input type="radio" name="tipo_movimento" value="recebimento" checked>
-                            <div class="type-option" data-value="recebimento">⬇ Receita</div>
+                            <div class="type-option" data-value="recebimento">${getIcon('arrow-down', 'w-4 h-4')} Receita</div>
                         </label>
                         <label>
                             <input type="radio" name="tipo_movimento" value="pagamento">
-                            <div class="type-option" data-value="pagamento">⬆ Despesa</div>
+                            <div class="type-option" data-value="pagamento">${getIcon('arrow-up', 'w-4 h-4')} Despesa</div>
                         </label>
                     </div>
                 </div>
@@ -429,8 +433,8 @@ function renderFinanceTable(list: Pagamento[]) {
                         <td><span class="badge ${getStatusBadgeClass(p.status)}">${getStatusLabel(p.status)}</span></td>
                         <td>
                             <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                                <button class="btn btn-secondary btn-sm edit-btn" data-id="${p.id}" title="Editar">✏️</button>
-                                <button class="btn btn-danger btn-sm delete-btn" data-id="${p.id}" title="Excluir">🗑️</button>
+                                <button class="btn btn-secondary btn-sm edit-btn" data-id="${p.id}" title="Editar">${getIcon('edit', 'w-4 h-4')}</button>
+                                <button class="btn btn-danger btn-sm delete-btn" data-id="${p.id}" title="Excluir">${getIcon('trash', 'w-4 h-4')}</button>
                             </div>
                         </td>
                     </tr>
@@ -490,7 +494,7 @@ function setupEventListeners(container: HTMLElement) {
                 financeiro.delete(id).then(() => {
                     showToast('Excluído com sucesso', 'success');
                     renderFinanceiro(container); // Reload all
-                }).catch(err => showToast('Erro ao excluir', 'error'));
+                }).catch(() => showToast('Erro ao excluir', 'error'));
             }
         }
     });

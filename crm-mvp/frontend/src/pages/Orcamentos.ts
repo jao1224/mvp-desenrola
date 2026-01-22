@@ -1,5 +1,5 @@
 import { orcamentos, clientes, settings } from '../api/client';
-import { PriceCalculationResponse, Orcamento } from '../api/types';
+import { Orcamento } from '../api/types';
 import { showToast, formatCurrency, navigate, formatDate } from '../utils/helpers';
 
 // Shared state
@@ -140,12 +140,7 @@ async function renderCalculator(container: HTMLElement) {
         }
     };
 
-    let calcResult: PriceCalculationResponse = {
-        valor_setup: 0,
-        valor_mensal: 0,
-        valor_total: 0,
-        detalhes: { setup: {}, mensal: {} }
-    };
+
 
     let editingId: string | null = null; // Track if we are editing
 
@@ -355,7 +350,7 @@ async function renderCalculator(container: HTMLElement) {
 
         try {
             const res = await orcamentos.calculate({ configuracao: config });
-            calcResult = res;
+            // calcResult = res;
             dispSetup.textContent = formatCurrency(res.valor_setup);
             dispMensal.textContent = formatCurrency(res.valor_mensal);
 

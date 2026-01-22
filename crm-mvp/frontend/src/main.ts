@@ -11,7 +11,7 @@ import { renderFunil } from './pages/Funil';
 import { renderAgendamento } from './pages/Agendamento';
 import { renderOrcamentos } from './pages/Orcamentos';
 import { renderConfiguracoes } from './pages/Configuracoes';
-import { renderPlaceholder } from './pages/Placeholder';
+
 
 const app = document.getElementById('app')!;
 

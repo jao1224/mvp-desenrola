@@ -1,4 +1,5 @@
 import { financeiro } from '../api/client';
+import { getIcon } from '../utils/icons';
 
 export async function renderDashboard(container: HTMLElement) {
   container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
@@ -35,7 +36,7 @@ export async function renderDashboard(container: HTMLElement) {
         <div class="card" style="height: 100%;">
           <div class="card-header" style="border: none; padding-bottom: 0;">
             <h2 class="card-title" style="display: flex; align-items: center; gap: var(--spacing-sm);">
-              <span style="font-size: 1.25rem;">📅</span> Próximos Agendamentos
+              <span style="display: flex; align-items: center; color: var(--color-primary);">${getIcon('calendar', 'w-6 h-6')}</span> Próximos Agendamentos
             </h2>
           </div>
           <div style="padding-top: var(--spacing-sm); color: var(--color-text-muted);">
@@ -50,7 +51,7 @@ export async function renderDashboard(container: HTMLElement) {
         <div class="card" style="height: 100%;">
           <div class="card-header" style="border: none; padding-bottom: 0;">
             <h2 class="card-title" style="display: flex; align-items: center; gap: var(--spacing-sm);">
-              <span style="font-size: 1.25rem;">🎉</span> Aniversariantes de ${currentMonth}
+              <span style="display: flex; align-items: center; color: var(--color-warning);">${getIcon('party', 'w-6 h-6')}</span> Aniversariantes de ${currentMonth}
             </h2>
           </div>
           <div style="padding-top: var(--spacing-xl);">
@@ -72,7 +73,7 @@ export async function renderDashboard(container: HTMLElement) {
         <div class="card" style="height: 100%;">
           <div class="card-header" style="border: none; padding-bottom: 0;">
             <h2 class="card-title" style="display: flex; align-items: center; gap: var(--spacing-sm);">
-              <span style="font-size: 1.25rem;">⚠️</span> Lembretes Financeiros
+              <span style="display: flex; align-items: center; color: var(--color-danger);">${getIcon('alert', 'w-6 h-6')}</span> Lembretes Financeiros
             </h2>
           </div>
           <div style="padding-top: var(--spacing-sm);">
@@ -87,7 +88,7 @@ export async function renderDashboard(container: HTMLElement) {
         <div class="card" style="height: 100%;">
           <div class="card-header" style="border: none; padding-bottom: 0;">
             <h2 class="card-title" style="display: flex; align-items: center; gap: var(--spacing-sm);">
-              <span style="font-size: 1.25rem;">📣</span> Datas de janeiro
+              <span style="display: flex; align-items: center; color: var(--color-info);">${getIcon('megaphone', 'w-6 h-6')}</span> Datas de janeiro
             </h2>
           </div>
           <div style="padding-top: var(--spacing-sm);">
@@ -115,12 +116,12 @@ export async function renderDashboard(container: HTMLElement) {
 
       <!-- Stats Grid -->
       <div class="stats-grid">
-        ${renderNewStatCard('Total de Clientes', stats.clientes_ativos + stats.clientes_potenciais, 'Clientes cadastrados no sistema', '👥')}
-        ${renderNewStatCard('Total de Parceiros', 0, 'Parceiros cadastrados no sistema', '🤝')}
-        ${renderNewStatCard('Colaboradores', 1, 'Membros na sua equipe', '💼')}
-        ${renderNewStatCard('Orçamentos Criados', 2, 'Orçamentos gerados no sistema', '🧾')}
-        ${renderNewStatCard('Contratos Salvos', stats.contratos_ativos, 'Contratos salvos no sistema', '📄')}
-        ${renderNewStatCard('Total de Projetos', stats.projetos_em_andamento + stats.projetos_concluidos, 'Projetos cadastrados no total', '🚀')}
+        ${renderNewStatCard('Total de Clientes', stats.clientes_ativos + stats.clientes_potenciais, 'Clientes cadastrados no sistema', getIcon('users'))}
+        ${renderNewStatCard('Total de Parceiros', 0, 'Parceiros cadastrados no sistema', getIcon('handshake'))}
+        ${renderNewStatCard('Colaboradores', 1, 'Membros na sua equipe', getIcon('briefcase'))}
+        ${renderNewStatCard('Orçamentos Criados', 2, 'Orçamentos gerados no sistema', getIcon('file-text'))}
+        ${renderNewStatCard('Contratos Salvos', stats.contratos_ativos, 'Contratos salvos no sistema', getIcon('file'))}
+        ${renderNewStatCard('Total de Projetos', stats.projetos_em_andamento + stats.projetos_concluidos, 'Projetos cadastrados no total', getIcon('rocket'))}
       </div>
 
     `;
@@ -130,12 +131,12 @@ export async function renderDashboard(container: HTMLElement) {
   }
 }
 
-function renderNewStatCard(title: string, value: number, subtitle: string, icon: string): string {
+function renderNewStatCard(title: string, value: number, subtitle: string, iconSvg: string): string {
   return `
     <div class="card" style="display: flex; flex-direction: column; height: 100%;">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--spacing-sm);">
         <span style="font-weight: 600; font-size: 1rem;">${title}</span>
-        <span style="color: var(--color-text-muted); font-size: 1.25rem;">${icon}</span>
+        <span style="color: var(--color-text-muted); display: flex; align-items: center;">${iconSvg}</span>
       </div>
       <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-text); line-height: 1; margin-bottom: var(--spacing-xs);">
         ${value}

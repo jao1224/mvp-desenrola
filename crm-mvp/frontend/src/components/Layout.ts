@@ -1,5 +1,6 @@
 import { navigate } from '../utils/helpers';
 import { logout, getCurrentUser } from './Auth';
+import { getIcon } from '../utils/icons';
 
 export function renderLayout(container: HTMLElement, activePage: string) {
   const user = getCurrentUser();
@@ -8,43 +9,43 @@ export function renderLayout(container: HTMLElement, activePage: string) {
     <div class="app">
       <aside class="sidebar">
         <div class="sidebar-logo">
-          🚀 CRM MVP
+          ${getIcon('rocket', 'w-6 h-6')} CRM MVP
         </div>
         <nav class="sidebar-nav">
           <div class="nav-item ${activePage === 'dashboard' ? 'active' : ''}" data-page="dashboard">
-            <span class="nav-item-icon">📊</span>
+            <span class="nav-item-icon">${getIcon('dashboard')}</span>
             Dashboard
           </div>
           <div class="nav-item ${activePage === 'clientes' ? 'active' : ''}" data-page="clientes">
-            <span class="nav-item-icon">👥</span>
+            <span class="nav-item-icon">${getIcon('users')}</span>
             Clientes e Parceiros
           </div>
           <div class="nav-item ${activePage === 'funil' ? 'active' : ''}" data-page="funil">
-            <span class="nav-item-icon">🌪️</span>
+            <span class="nav-item-icon">${getIcon('filter')}</span>
             Funil de Negociações
           </div>
           <div class="nav-item ${activePage === 'agendamento' ? 'active' : ''}" data-page="agendamento">
-            <span class="nav-item-icon">📅</span>
+            <span class="nav-item-icon">${getIcon('calendar')}</span>
             Agendamento
           </div>
           <div class="nav-item ${activePage === 'orcamento' ? 'active' : ''}" data-page="orcamento">
-            <span class="nav-item-icon">🧾</span>
+            <span class="nav-item-icon">${getIcon('file-text')}</span>
             Orçamento
           </div>
           <div class="nav-item ${activePage === 'contratos' ? 'active' : ''}" data-page="contratos">
-            <span class="nav-item-icon">📋</span>
+            <span class="nav-item-icon">${getIcon('clipboard')}</span>
             Contratos
           </div>
           <div class="nav-item ${activePage === 'projetos' ? 'active' : ''}" data-page="projetos">
-            <span class="nav-item-icon">📁</span>
+            <span class="nav-item-icon">${getIcon('folder')}</span>
             Projetos
           </div>
           <div class="nav-item ${activePage === 'financeiro' ? 'active' : ''}" data-page="financeiro">
-            <span class="nav-item-icon">💰</span>
+            <span class="nav-item-icon">${getIcon('dollar')}</span>
             Financeiro
           </div>
           <div class="nav-item ${activePage === 'configuracoes' ? 'active' : ''}" data-page="configuracoes">
-            <span class="nav-item-icon">⚙️</span>
+            <span class="nav-item-icon">${getIcon('settings')}</span>
             Configurações
           </div>
         </nav>

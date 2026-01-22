@@ -1,5 +1,6 @@
 import { clientes } from '../api/client';
-import { formatDocument, getStatusBadgeClass, getStatusLabel, showToast } from '../utils/helpers';
+import { showToast } from '../utils/helpers';
+import { getIcon } from '../utils/icons';
 import type { Cliente, ClienteCreate } from '../api/types';
 
 let clientesList: Cliente[] = [];
@@ -44,7 +45,7 @@ function renderClientesList(container: HTMLElement) {
         </div>
     
         ${clientesList.length === 0 ?
-      '<div class="empty-state"><div class="empty-state-icon">👥</div>Nenhum cliente cadastrado</div>' :
+      `<div class="empty-state"><div class="empty-state-icon">${getIcon('users', 'w-12 h-12')}</div>Nenhum cliente cadastrado</div>` :
       `<div class="table-container" style="margin-top: var(--spacing-md);">
         <table class="table" id="clientes-table">
             <thead>
@@ -241,8 +242,8 @@ function renderClienteRow(cliente: Cliente): string {
         <td style="color: var(--color-text-secondary);">${cliente.telefone || '-'}</td>
         <td>
             <div style="display: flex; gap: var(--spacing-sm);">
-                <button class="btn btn-secondary btn-sm edit-btn" data-id="${cliente.id}" title="Editar" style="padding: 6px; background: transparent; border: 1px solid var(--color-border);">✏️</button>
-                <button class="btn btn-danger btn-sm delete-btn" data-id="${cliente.id}" title="Excluir" style="padding: 6px; background: transparent; border: 1px solid var(--color-danger); color: var(--color-danger);">🗑️</button>
+                <button class="btn btn-secondary btn-sm edit-btn" data-id="${cliente.id}" title="Editar" style="padding: 6px; background: transparent; border: 1px solid var(--color-border);">${getIcon('edit', 'w-4 h-4')}</button>
+                <button class="btn btn-danger btn-sm delete-btn" data-id="${cliente.id}" title="Excluir" style="padding: 6px; background: transparent; border: 1px solid var(--color-danger); color: var(--color-danger);">${getIcon('trash', 'w-4 h-4')}</button>
             </div>
         </td>
     </tr>
@@ -451,93 +452,8 @@ function setupEventListeners(container: HTMLElement) {
   }
 }
 
-// Re-implemented simple table update helper if needed, 
+// Re-implemented simple table update helper if needed,
 // though renderClientes(container) is usually safer to refresh everything.
-function updateTable() {
-  const tbody = document.querySelector('#clientes-table tbody');
-  if (tbody) {
-    tbody.innerHTML = clientesList.map(renderClienteRow).join('');
-    attachRowListeners();
-  }
-}
 
-function attachRowListeners() {
-  // Edit buttons
-  document.querySelectorAll('.edit-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const id = (btn as HTMLElement).dataset.id!;
-      const cliente = clientesList.find(c => c.id === id);
 
-      if (cliente) {
-        const modal = document.getElementById('cliente-modal') as HTMLElement;
-        const form = document.getElementById('cliente-form') as HTMLFormElement;
 
-        // Reset form
-        form.reset();
-        document.querySelectorAll('details').forEach(d => d.open = false);
-        (document.querySelector('details') as HTMLDetailsElement).open = true;
-
-        (document.getElementById('cliente-id') as HTMLInputElement).value = cliente.id;
-        (document.getElementById('modal-title') as HTMLElement).textContent = 'Editar Cadastro';
-
-        // Determine Type
-        const isPJ = cliente.documento_tipo === 'cnpj';
-        const tipoSelect = document.getElementById('tipo-pessoa') as HTMLSelectElement;
-        tipoSelect.value = isPJ ? 'pj' : 'pf';
-        tipoSelect.dispatchEvent(new Event('change'));
-
-        // Populate Fields
-        if (isPJ) {
-          (document.getElementById('nome_fantasia') as HTMLInputElement).value = cliente.nome;
-          (document.getElementById('cnpj') as HTMLInputElement).value = cliente.documento;
-          (document.getElementById('inscricao_estadual') as HTMLInputElement).value = cliente.inscricao_estadual || '';
-          (document.getElementById('razao_social') as HTMLInputElement).value = cliente.razao_social || '';
-          (document.getElementById('ramo_atividade') as HTMLInputElement).value = cliente.ramo_atividade || '';
-          (document.getElementById('porte_empresa') as HTMLSelectElement).value = cliente.porte_empresa || '';
-          (document.getElementById('num_funcionarios') as HTMLInputElement).value = cliente.num_funcionarios || '';
-          (document.getElementById('faturamento_anual') as HTMLInputElement).value = cliente.faturamento_anual || '';
-        } else {
-          (document.getElementById('nome_pf') as HTMLInputElement).value = cliente.nome;
-          (document.getElementById('cpf') as HTMLInputElement).value = cliente.documento;
-          (document.getElementById('sexo') as HTMLSelectElement).value = cliente.sexo || '';
-          (document.getElementById('data_nascimento') as HTMLInputElement).value = cliente.data_nascimento || '';
-          (document.getElementById('profissao') as HTMLInputElement).value = cliente.profissao || '';
-        }
-
-        (document.getElementById('email') as HTMLInputElement).value = cliente.email || '';
-        (document.getElementById('telefone') as HTMLInputElement).value = cliente.telefone || '';
-        (document.getElementById('endereco') as HTMLInputElement).value = cliente.endereco || '';
-        (document.getElementById('setor') as HTMLInputElement).value = cliente.setor || '';
-        (document.getElementById('status') as HTMLSelectElement).value = cliente.status || 'potencial';
-        (document.getElementById('observacoes') as HTMLTextAreaElement).value = cliente.observacoes || '';
-
-        modal.classList.add('active');
-      }
-    });
-  });
-
-  // Delete buttons
-  document.querySelectorAll('.delete-btn').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      const id = (btn as HTMLElement).dataset.id!;
-      if (confirm('Tem certeza que deseja excluir este cadastro?')) {
-        try {
-          await clientes.delete(id);
-          // showToast('Cadastro excluído com sucesso', 'success'); // Import unavailable here? Using existing.
-          // Assuming showToast is imported, but verify. 
-          // To be safe, I'll assume renderClientes will refresh list.
-          const container = document.querySelector('main') || document.body; // Fallback container
-          // Actually, renderClientes is exported/available in scope? 
-          // renderClientesList is not exported. But I can just reload page or call renderClientes if in scope.
-          // Accessing global or passed container? 
-          // Note: 'container' argument from setupEventListeners is not available here.
-          // I'll emit a custom event or just reload for now, simpler.
-          window.location.reload();
-        } catch (error: any) {
-          console.error(error);
-          alert('Erro ao excluir');
-        }
-      }
-    });
-  });
-}
