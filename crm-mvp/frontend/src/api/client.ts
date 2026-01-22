@@ -40,6 +40,7 @@ async function request<T>(
     const response = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
         credentials: 'include',
+        cache: 'no-store',
         headers: {
             'Content-Type': 'application/json',
             ...options.headers,

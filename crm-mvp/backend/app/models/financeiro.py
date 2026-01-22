@@ -27,11 +27,11 @@ class Pagamento(Base):
     
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     idempotency_key = Column(String, unique=True, nullable=True)  # Prevenir duplicatas
-    tipo = Column(Enum(PaymentType), nullable=False)
+    tipo = Column(String, nullable=False)
     valor = Column(Float, nullable=False)
     data_vencimento = Column(DateTime, nullable=False)
     data_pagamento = Column(DateTime, nullable=True)
-    status = Column(Enum(PaymentStatus), default=PaymentStatus.PENDENTE)
+    status = Column(String, default="pendente")
     descricao = Column(Text)
     cliente_id = Column(String, ForeignKey("clientes.id"), nullable=True, index=True)
     projeto_id = Column(String, ForeignKey("projetos.id"), nullable=True, index=True)

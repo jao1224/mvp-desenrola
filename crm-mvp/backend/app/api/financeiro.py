@@ -84,13 +84,19 @@ async def create_pagamento(
             return existing
     
     pagamento = Pagamento(**pagamento_data.model_dump())
+    
+    # Se status for pago e data_pagamento não informada, assume hoje
+    if pagamento.status == "pago" and not pagamento.data_pagamento:
+        pagamento.data_pagamento = datetime.utcnow()
+        
     db.add(pagamento)
     
     # Log de atividade
-    tipo_str = "Recebimento" if pagamento.tipo == PaymentType.RECEBIMENTO else "Pagamento"
+    # tipo agora é str, não Enum
+    tipo_str = "Recebimento" if pagamento.tipo == "recebimento" else "Pagamento"
     log = ActivityLog(
         user_id=current_user.id,
-        action=f"CREATE_{pagamento.tipo.value.upper()}",
+        action=f"CREATE_{pagamento.tipo.upper()}",
         entity_type="Pagamento",
         entity_id=pagamento.id,
         details=f"{tipo_str} de R$ {pagamento.valor:.2f} registrado",
@@ -124,7 +130,7 @@ async def update_pagamento(
     
     # Se está sendo marcado como pago, atualiza status
     if "data_pagamento" in update_data and update_data["data_pagamento"]:
-        update_data["status"] = PaymentStatus.PAGO
+        update_data["status"] = "pago"
     
     for field, value in update_data.items():
         setattr(pagamento, field, value)
@@ -135,7 +141,7 @@ async def update_pagamento(
         action="UPDATE_PAGAMENTO",
         entity_type="Pagamento",
         entity_id=pagamento.id,
-        details=f"Pagamento atualizado - Status: {pagamento.status.value}",
+        details=f"Pagamento atualizado - Status: {pagamento.status}",
         ip_address=request.client.host if request.client else None
     )
     db.add(log)
@@ -199,16 +205,16 @@ async def get_fluxo_caixa(
         
         # Recebimentos do mês
         recebimentos = db.query(func.sum(Pagamento.valor)).filter(
-            Pagamento.tipo == PaymentType.RECEBIMENTO,
-            Pagamento.status == PaymentStatus.PAGO,
+            Pagamento.tipo == "recebimento",
+            Pagamento.status == "pago",
             Pagamento.data_pagamento >= mes_atual,
             Pagamento.data_pagamento < mes_proximo
         ).scalar() or 0
         
         # Pagamentos do mês
         pagamentos = db.query(func.sum(Pagamento.valor)).filter(
-            Pagamento.tipo == PaymentType.PAGAMENTO,
-            Pagamento.status == PaymentStatus.PAGO,
+            Pagamento.tipo == "pagamento",
+            Pagamento.status == "pago",
             Pagamento.data_pagamento >= mes_atual,
             Pagamento.data_pagamento < mes_proximo
         ).scalar() or 0

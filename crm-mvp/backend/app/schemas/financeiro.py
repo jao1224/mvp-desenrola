@@ -5,7 +5,7 @@ from app.models.financeiro import PaymentType, PaymentStatus
 
 
 class PagamentoBase(BaseModel):
-    tipo: PaymentType
+    tipo: str
     valor: float
     data_vencimento: datetime
     descricao: Optional[str] = None
@@ -21,13 +21,13 @@ class PagamentoUpdate(BaseModel):
     valor: Optional[float] = None
     data_vencimento: Optional[datetime] = None
     data_pagamento: Optional[datetime] = None
-    status: Optional[PaymentStatus] = None
+    status: Optional[str] = None
     descricao: Optional[str] = None
 
 
 class PagamentoResponse(PagamentoBase):
     id: str
-    status: PaymentStatus
+    status: str
     data_pagamento: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
