@@ -37,14 +37,20 @@ async function request<T>(
     endpoint: string,
     options: RequestInit = {}
 ): Promise<T> {
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(options.headers as Record<string, string>),
+    };
+
+    if (options.body instanceof FormData) {
+        delete headers['Content-Type'];
+    }
+
     const response = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
         credentials: 'include',
         cache: 'no-store',
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
+        headers,
     });
 
     if (!response.ok) {
@@ -75,6 +81,15 @@ export const auth = {
 
     updateProfile: (id: string, data: Partial<{ name: string; email: string; password: string }>) =>
         request<User>(`/auth/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+    listUsers: () =>
+        request<User[]>('/auth/users'),
+
+    createUser: (data: { email: string; password: string; name: string; role: string }) =>
+        request<User>('/auth/users', { method: 'POST', body: JSON.stringify(data) }),
+
+    deleteUser: (id: string) =>
+        request<void>(`/auth/users/${id}`, { method: 'DELETE' }),
 };
 
 // Clientes
@@ -147,6 +162,22 @@ export const contratos = {
 
     delete: (id: string) =>
         request<void>(`/contratos/${id}`, { method: 'DELETE' }),
+
+    preview: (data: { orcamento_id: string; cliente_id: string; template_name?: string }) =>
+        request<{ html_content: string }>('/contratos/preview', { method: 'POST', body: JSON.stringify(data) }),
+
+    uploadDocument: (contratoId: string, file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return request<any>(`/contratos/${contratoId}/documentos`, {
+            method: 'POST',
+            body: formData as any, // Cast to any to bypass default JSON handling if needed
+            headers: {} // Empty headers to let browser set Content-Type: multipart/form-data with boundary
+        });
+    },
+
+    deleteDocument: (contratoId: string, documentoId: string) =>
+        request<void>(`/contratos/${contratoId}/documentos/${documentoId}`, { method: 'DELETE' }),
 };
 
 // Financeiro

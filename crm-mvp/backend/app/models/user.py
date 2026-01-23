@@ -22,7 +22,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     name = Column(String, nullable=False)
-    role = Column(Enum(Role), default=Role.COLABORADOR)
+    role = Column(String, default="colaborador") # Use String to avoid Enum mapping crashes
     is_active = Column(String, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

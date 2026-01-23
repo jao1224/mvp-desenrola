@@ -41,7 +41,7 @@ async def login(
         )
     
     access_token = create_access_token(
-        data={"sub": user.id, "role": user.role.value},
+        data={"sub": user.id, "role": user.role.value if hasattr(user.role, 'value') else user.role},
         expires_delta=timedelta(minutes=settings.access_token_expire_minutes)
     )
     
@@ -178,3 +178,94 @@ async def update_user(
     db.commit()
     db.refresh(user)
     return user
+
+
+@router.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def create_user_admin(
+    user_data: UserCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Cria novo usuário (apenas admin)"""
+    if current_user.role != Role.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas administradores podem criar usuários"
+        )
+    
+    # Verifica email duplicado
+    existing = db.query(User).filter(User.email == user_data.email).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email já cadastrado"
+        )
+    
+    user = User(
+        email=user_data.email,
+        password_hash=get_password_hash(user_data.password),
+        name=user_data.name,
+        role=user_data.role.value if hasattr(user_data.role, 'value') else user_data.role
+    )
+    db.add(user)
+    
+    # Log
+    log = ActivityLog(
+        user_id=current_user.id,
+        action="CREATE_USER",
+        details=f"Criou usuário '{user.name}' ({user.role.value if hasattr(user.role, 'value') else user.role})",
+        entity_type="User",
+        entity_id=str(user.id) # ID not available until flush/commit, but let's commit first
+    )
+    # Don't add log yet or handling ID might be tricky without flush
+    
+    db.commit()
+    db.refresh(user)
+    
+    # Now add log
+    log.entity_id = str(user.id)
+    db.add(log)
+    db.commit()
+    
+    return user
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(
+    user_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Remove usuário (apenas admin)"""
+    if current_user.role != Role.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas administradores podem remover usuários"
+        )
+    
+    if current_user.id == user_id:
+         raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Não é possível remover a si mesmo"
+        )
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado"
+        )
+    
+    # Log
+    log = ActivityLog(
+        user_id=current_user.id,
+        action="DELETE_USER",
+        details=f"Removeu usuário '{user.name}'",
+        entity_type="User",
+        entity_id=user_id
+    )
+    db.add(log)
+    
+    db.delete(user)
+    db.commit()
+    return None

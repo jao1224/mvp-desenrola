@@ -18,6 +18,11 @@ class Contrato(Base):
     valor = Column(Float, nullable=False)
     condicoes = Column(Text)
     observacoes = Column(Text)
+    
+    # Contract Engine Fields
+    conteudo_doc = Column(Text, nullable=True) # HTML Snapshot
+    template_versao = Column(String(20), default="v1")
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

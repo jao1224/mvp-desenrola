@@ -10,7 +10,8 @@ from app.core.database import get_db
 
 settings = get_settings()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Switch to pbkdf2_sha256 for better compatibility on Windows (avoids bcrypt issues)
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 security = HTTPBearer(auto_error=False)
 
 
@@ -53,23 +54,37 @@ async def get_current_user(
     """Obtém usuário atual a partir do token"""
     from app.models.user import User
     
-    # --- BYPASS AUTHENTICATION FOR DEVELOPMENT ---
-    from app.models.user import Role
-    from types import SimpleNamespace
-    
     print("DEBUG: Bypass auth triggered. Returning Dev Admin object.")
     
-    # Usando objeto (SimpleNamespace) para permitir acesso por . (dot notation)
-    # como user.id, user.role, que é esperado pelo restante do código
-    mock_user = SimpleNamespace(
-        id="dev-admin-id",
-        email="admin@teste.com",
-        name="Admin Dev",
-        role=Role.ADMIN,
-        is_active=True,
-        created_at=datetime.utcnow()
+    # Busca um usuário real no banco para evitar erro de Foreign Key (ActivityLog)
+    from app.models.user import User, Role
+    
+    # Try to find existing admin or create one
+    real_user = db.query(User).filter(User.role == "admin").first()
+    if not real_user:
+        # Fallback to any user
+        real_user = db.query(User).first()
+        
+    if real_user:
+        return real_user
+        
+    # If DB is empty, create a temporary dev admin (persisted)
+    from app.core.security import get_password_hash
+    import uuid
+    
+    dev_admin = User(
+        id=str(uuid.uuid4()),
+        email="admin@dev.com",
+        name="Dev Admin",
+        password_hash=get_password_hash("123"),
+        role="admin",
+        is_active=True
     )
-    return mock_user
+    db.add(dev_admin)
+    db.commit()
+    db.refresh(dev_admin)
+    
+    return dev_admin
 
 
 def require_role(allowed_roles: list):

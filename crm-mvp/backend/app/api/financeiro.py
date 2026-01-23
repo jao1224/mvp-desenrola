@@ -336,3 +336,7 @@ async def get_atividades_recentes(
         ))
     
     return result
+
+
+
+

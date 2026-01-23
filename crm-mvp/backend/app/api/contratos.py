@@ -288,3 +288,36 @@ async def delete_documento(
     db.delete(documento)
     db.commit()
     return None
+
+
+from app.services.contract_engine import ContractAssembler
+from app.models.orcamento import Orcamento
+from app.schemas.financeiro import ContractPreviewRequest, ContractPreviewResponse
+
+@router.post("/preview", response_model=ContractPreviewResponse)
+async def preview_contract(
+    req: ContractPreviewRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Gera um preview HTML do contrato baseado no Orçamento + Cliente
+    """
+    orcamento = db.query(Orcamento).filter(Orcamento.id == req.orcamento_id).first()
+    if not orcamento:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    
+    cliente = db.query(Cliente).filter(Cliente.id == req.cliente_id).first()
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+
+    assembler = ContractAssembler()
+    try:
+        html = assembler.generate_contract(cliente, orcamento, req.template_name)
+        return ContractPreviewResponse(html_content=html)
+    except Exception as e:
+        print(f"Erro na geração do contrato: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Erro na geração do contrato: {str(e)}")
+

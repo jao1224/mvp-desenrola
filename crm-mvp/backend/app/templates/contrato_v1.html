@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Minuta de Contrato</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2.5cm;
+        }
+        body {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #000;
+            background: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+        }
+        .section-title {
+            font-weight: bold;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+        p {
+            margin-bottom: 0.8rem;
+            text-align: justify;
+        }
+        .signature-block {
+            margin-top: 4rem;
+            display: flex;
+            justify-content: space-between;
+            page-break-inside: avoid;
+        }
+        .signature-line {
+            width: 45%;
+            border-top: 1px solid #000;
+            text-align: center;
+            padding-top: 5px;
+            font-size: 11pt;
+        }
+        .variable {
+            background-color: #fff; /* Debug: #ffeb3b for highlight */
+        }
+        @media print {
+            body { padding: 0; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE TECNOLOGIA<br>
+        Nº {{ contrato_numero }}
+    </div>
+
+    <p>
+        <strong>CONTRATADA:</strong> <strong>{{ empresa_nome }}</strong>, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº {{ empresa_cnpj }}, com sede em {{ empresa_endereco }}.
+    </p>
+
+    <p>
+        <strong>CONTRATANTE:</strong> <strong>{{ cliente_nome }}</strong>, {{ 'pessoa jurídica' if cliente_tipo == 'pj' else 'pessoa física' }}, inscrita no {{ 'CNPJ' if cliente_tipo == 'pj' else 'CPF' }} sob o nº {{ cliente_documento }}, com sede/domicílio em {{ cliente_endereco }}.
+    </p>
+
+    <p>Pelo presente instrumento, as partes acima qualificadas têm, entre si, justo e contratado o seguinte:</p>
+
+    <div class="section-title">CLÁUSULA PRIMEIRA - DO OBJETO</div>
+    <p>
+        1.1. O presente contrato tem como objeto a prestação de serviços de tecnologia, conforme especificado no <strong>Orçamento nº {{ orcamento_titulo }}</strong>, parte integrante deste instrumento, compreendendo:
+    </p>
+    <ul>
+        {% for modulo in modulos %}
+        <li>Licenciamento e implantação do módulo: <strong>{{ modulo }}</strong>;</li>
+        {% endfor %}
+        {% for servico in servicos %}
+        <li>{{ servico }};</li>
+        {% endfor %}
+    </ul>
+    <p>
+        1.2. O escopo detalhado dos serviços encontra-se descrito na Proposta Comercial aprovada em {{ data_aprovacao }}.
+    </p>
+
+    <div class="section-title">CLÁUSULA SEGUNDA - DOS VALORES E PAGAMENTO</div>
+    <p>
+        2.1. Pelos serviços de SETUP e implantação, a CONTRATANTE pagará à CONTRATADA o valor único de <strong>{{ valor_setup }}</strong> ({{ valor_setup_extenso }}).
+    </p>
+    <p>
+        2.2. Pelos serviços recorrentes (mensalidade), a CONTRATANTE pagará mensalmente o valor de <strong>{{ valor_mensal }}</strong> ({{ valor_mensal_extenso }}), com vencimento todo dia {{ dia_vencimento }}.
+    </p>
+
+    <div class="section-title">CLÁUSULA TERCEIRA - DA VIGÊNCIA</div>
+    <p>
+        3.1. O presente contrato terá vigência de <strong>12 (doze) meses</strong>, iniciando-se em {{ data_inicio }} e encerrando-se em {{ data_fim }}, podendo ser renovado automaticamente por iguais períodos.
+    </p>
+
+    <div class="section-title">CLÁUSULA QUARTA - DISPOSIÇÕES GERAIS</div>
+    <p>
+        4.1. As partes elegem o foro da comarca de São Paulo/SP para dirimir quaisquer dúvidas oriundas deste contrato.
+    </p>
+
+    <div style="margin-top: 2rem; text-align: center;">
+        São Paulo, {{ data_hoje_extenso }}.
+    </div>
+
+    <div class="signature-block">
+        <div class="signature-line">
+            <strong>{{ empresa_nome }}</strong><br>
+            CONTRATADA
+        </div>
+        <div class="signature-line">
+            <strong>{{ cliente_nome }}</strong><br>
+            CONTRATANTE
+        </div>
+    </div>
+    
+    <div class="signature-block">
+         <div class="signature-line">
+            Testemunha 1<br>
+            CPF:
+        </div>
+         <div class="signature-line">
+            Testemunha 2<br>
+            CPF:
+        </div>
+    </div>
+
+</body>
+</html>

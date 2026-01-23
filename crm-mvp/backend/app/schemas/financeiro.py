@@ -76,3 +76,13 @@ class AtividadeRecente(BaseModel):
     details: Optional[str]
     user_name: str
     created_at: datetime
+
+
+class ContractPreviewRequest(BaseModel):
+    orcamento_id: str
+    cliente_id: str
+    template_name: Optional[str] = "contrato_v1.html"
+
+class ContractPreviewResponse(BaseModel):
+    html_content: str
+
